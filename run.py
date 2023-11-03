@@ -22,7 +22,7 @@ evaluations = {
         "test": "fr",
         "columns": ["a", "b", "label", "text", "c"],
         "class_weights": False,
-        "lr": 4e-05,
+        "lr": 3.2708e-05,
         "train_batch_size": 8,
         "eval_batch_size": 32,
         "weight_decay": 0,

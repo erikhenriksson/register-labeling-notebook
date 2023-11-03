@@ -23,9 +23,9 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 pprint = PrettyPrinter(compact=True).pprint
 # default arguments
-LEARNING_RATE = 1e-4
+LEARNING_RATE = 3.2708e-05
 BATCH_SIZE = 8
-TRAIN_EPOCHS = 2
+TRAIN_EPOCHS = 30
 MODEL_NAME = "xlm-roberta-base"
 PATIENCE = 5
 
@@ -271,7 +271,7 @@ dataset = datasets.load_dataset(
     "csv",
     data_files=data_files,  # {'train':options.train, 'test':options.test, 'dev': options.dev},
     delimiter="\t",
-    column_names=["label", "text"],
+    column_names=["a", "b", "label", "text", "c"],
     features=datasets.Features(
         {  # Here we tell how to interpret the attributes
             "text": datasets.Value("string"),
