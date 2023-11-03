@@ -14,7 +14,7 @@ from transformers import (
 from ray import tune
 
 data_path = "data/"
-output_path = "output/"
+output_path = "/scratch/project_2005092/erik/register-labeling-notebook/"
 evaluations = {
     "xmlr-base-fr": {
         "model_name": "xlm-roberta-base",
