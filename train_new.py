@@ -2,7 +2,12 @@ import numpy as np
 import torch
 import datasets
 from pprint import PrettyPrinter
-from sklearn.metrics import f1_score, roc_auc_score, accuracy_score
+from sklearn.metrics import (
+    f1_score,
+    roc_auc_score,
+    accuracy_score,
+    classification_report,
+)
 from transformers import (
     AutoTokenizer,
     EvalPrediction,
@@ -17,6 +22,7 @@ data_path = "data/"
 output_path = "/scratch/project_2005092/erik/register-labeling-notebook/"
 evaluations = {
     "xmlr-base-fr": {
+        "save_model": f"{output_path}model/fr",
         "model_name": "xlm-roberta-base",
         "train": "fr",
         "test": "fr",
@@ -31,7 +37,6 @@ evaluations = {
         "threshold": None,
         "cache_dir": f"{output_path}cache/fr",
         "checkpoint_dir": f"{output_path}checkpoints/fr",
-        "output_dir": f"{output_path}model/fr",
         "tune_hyperparameters": False,
     }
 }
@@ -403,4 +408,22 @@ else:
 print("Evaluating with test set...")
 eval_results = trainer.evaluate(dataset["test"])
 
+if evaluation["save_model"]:
+    trainer.save_model(evaluation["save_model"])
+
 pprint(eval_results)
+
+
+test_pred = trainer.predict(dataset["test"])
+trues = test_pred.label_ids
+predictions = test_pred.predictions
+
+if not evaluation["threshold"]:
+    threshold = optimize_threshold(predictions, trues)
+sigmoid = torch.nn.Sigmoid()
+probs = sigmoid(torch.Tensor(predictions))
+
+preds = np.zeros(probs.shape)
+preds[np.where(probs >= threshold)] = 1
+
+print(classification_report(trues, preds, target_names=labels))
