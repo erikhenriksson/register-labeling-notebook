@@ -32,7 +32,7 @@ evaluations = {
         "train_batch_size": 8,
         "eval_batch_size": 32,
         "weight_decay": 0,
-        "epochs": 30,
+        "epochs": 50,
         "patience": 5,
         "threshold": None,
         "cache_dir": f"{output_path}cache/fr",
@@ -405,7 +405,7 @@ if evaluation["tune_hyperparameters"]:
 else:
     trainer.train()
 
-print("Evaluating with test set...")
+print("Evaluating with test set... (last threshold)")
 eval_results = trainer.evaluate(dataset["test"])
 
 if evaluation["save_model"]:
@@ -425,5 +425,7 @@ probs = sigmoid(torch.Tensor(predictions))
 
 preds = np.zeros(probs.shape)
 preds[np.where(probs >= threshold)] = 1
+
+print(f"Evaluating with test set... (optimized threshold {threshold})")
 
 print(classification_report(trues, preds, target_names=labels))
