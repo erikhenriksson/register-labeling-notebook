@@ -22,7 +22,7 @@ data_path = "data/"
 output_path = "/scratch/project_2005092/erik/register-labeling-notebook/"
 evaluations = {
     "xmlr-base-fr": {
-        "save_model": f"{output_path}model/fr",
+        "save_model": f"{output_path}fr/model",
         "model_name": "xlm-roberta-base",
         "train": "fr",
         "test": "fr",
@@ -35,8 +35,8 @@ evaluations = {
         "epochs": 50,
         "patience": 5,
         "threshold": None,
-        "cache_dir": f"{output_path}cache/fr",
-        "checkpoint_dir": f"{output_path}checkpoints/fr",
+        "cache_dir": f"{output_path}fr/cache",
+        "checkpoint_dir": f"{output_path}fr/checkpoints",
         "tune_hyperparameters": False,
     }
 }
