@@ -18,6 +18,8 @@ from transformers import (
 )
 from ray import tune
 
+evaluation_name = "xmlr-base-fr-tune"
+
 data_path = "data/"
 output_path = "/scratch/project_2005092/erik/register-labeling-notebook/"
 evaluations = {
@@ -242,8 +244,6 @@ def optimize_threshold(predictions, labels):
     return best_f1_threshold
 
 
-evaluation_name = "xmlr-base-fr"
-
 pprint = PrettyPrinter(compact=True).pprint
 
 # Init data
@@ -428,8 +428,11 @@ if evaluation["tune_hyperparameters"]:
 else:
     trainer.train()
 
-    if evaluation["save_model"]:
+    if evaluation.get("save_model", None):
+        print(f'Saving model to {evaluation["save_model"]}')
         trainer.save_model(evaluation["save_model"])
+    else:
+        print("Not saving model.")
 
 print("Evaluating with test set... (last threshold)")
 eval_results = trainer.evaluate(dataset["test"])
