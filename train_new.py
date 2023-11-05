@@ -58,6 +58,23 @@ evaluations = {
         "checkpoint_dir": f"{output_path}fr_tune/checkpoints",
         "tune_hyperparameters": True,
     },
+    "xmlr-base-fi-tune": {
+        "model_name": "xlm-roberta-base",
+        "train": "fi",
+        "test": "fi",
+        "columns": ["label", "text"],
+        "class_weights": False,
+        "lr": 3.2708e-05,
+        "train_batch_size": 8,
+        "eval_batch_size": 32,
+        "weight_decay": 0,
+        "epochs": 50,
+        "patience": 5,
+        "threshold": None,
+        "cache_dir": f"{output_path}fi_tune/cache",
+        "checkpoint_dir": f"{output_path}fi_tune/checkpoints",
+        "tune_hyperparameters": True,
+    },
 }
 
 # only train and test for these languages
