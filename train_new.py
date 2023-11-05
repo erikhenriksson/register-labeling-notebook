@@ -21,7 +21,7 @@ from ray import tune
 data_path = "data/"
 output_path = "/scratch/project_2005092/erik/register-labeling-notebook/"
 evaluations = {
-    "xmlr-base-fr": {
+    "xmlr-base-fr-best": {
         "save_model": f"{output_path}fr/model",
         "model_name": "xlm-roberta-base",
         "train": "fr",
@@ -38,7 +38,24 @@ evaluations = {
         "cache_dir": f"{output_path}fr/cache",
         "checkpoint_dir": f"{output_path}fr/checkpoints",
         "tune_hyperparameters": False,
-    }
+    },
+    "xmlr-base-fr-tune": {
+        "model_name": "xlm-roberta-base",
+        "train": "fr",
+        "test": "fr",
+        "columns": ["a", "b", "label", "text", "c"],
+        "class_weights": False,
+        "lr": 3.2708e-05,
+        "train_batch_size": 8,
+        "eval_batch_size": 32,
+        "weight_decay": 0,
+        "epochs": 50,
+        "patience": 5,
+        "threshold": None,
+        "cache_dir": f"{output_path}fr_tune/cache",
+        "checkpoint_dir": f"{output_path}fr_tune/checkpoints",
+        "tune_hyperparameters": True,
+    },
 }
 
 # only train and test for these languages
@@ -373,6 +390,9 @@ def compute_metrics(p: EvalPrediction):
     return result
 
 
+# Argument gives the number of steps of patience before early stopping
+early_stopping = EarlyStoppingCallback(early_stopping_patience=evaluation["patience"])
+
 trainer = MultiLabelTrainer(
     model=None,
     model_init=model_init,
@@ -381,21 +401,24 @@ trainer = MultiLabelTrainer(
     eval_dataset=dataset["dev"],
     tokenizer=tokenizer,
     compute_metrics=compute_metrics,
+    callbacks=[early_stopping],
 )
 
 # Tune hyperparameters or just train
 
 if evaluation["tune_hyperparameters"]:
     asha_scheduler = tune.schedulers.ASHAScheduler(
-        metric="loss",
-        mode="min",
+        metric="eval_f1",
+        mode="max",
     )
 
     tune_config = {
-        "learning_rate": tune.uniform(1e-5, 5e-5),
+        "learning_rate": tune.grid_search(
+            [0.0001, 0.00008, 0.00006, 0.00004, 0.00002, 0.000001]
+        ),
         # "weight_decay": tune.choice([0.0, 0.1, 0.2, 0.3]),
-        "num_train_epochs": tune.choice([20]),
-        "per_device_train_batch_size": tune.choice([8, 10]),
+        # "num_train_epochs": tune.choice([20]),
+        "per_device_train_batch_size": tune.choice([6, 8, 10, 12, 14]),
     }
 
     trainer.hyperparameter_search(
@@ -405,11 +428,12 @@ if evaluation["tune_hyperparameters"]:
 else:
     trainer.train()
 
+    if evaluation["save_model"]:
+        trainer.save_model(evaluation["save_model"])
+
 print("Evaluating with test set... (last threshold)")
 eval_results = trainer.evaluate(dataset["test"])
 
-if evaluation["save_model"]:
-    trainer.save_model(evaluation["save_model"])
 
 pprint(eval_results)
 
