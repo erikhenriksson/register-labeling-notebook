@@ -63,7 +63,7 @@ evaluations = {
         "model_name": "xlm-roberta-base",
         "train": "fi",
         "test": "fi",
-        "columns": ["label", "text"],
+        "columns": ["label", "text", "a", "b", "c"],
         "class_weights": False,
         "lr": 3.2708e-05,
         "train_batch_size": 8,
