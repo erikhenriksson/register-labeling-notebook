@@ -34,7 +34,7 @@ evaluations = {
         "train_batch_size": 8,
         "eval_batch_size": 32,
         "weight_decay": 0,
-        "epochs": 50,
+        "epochs": 40,
         "patience": 5,
         "threshold": None,
         "cache_dir": f"{output_path}fr/cache",
@@ -431,11 +431,11 @@ if evaluation["tune_hyperparameters"]:
 
     tune_config = {
         "learning_rate": tune.grid_search(
-            [0.0001, 0.00008, 0.00006, 0.00004, 0.00002, 0.000001]
+            [0.00008, 0.00006, 0.00004, 0.00002, 0.000008]
         ),
         # "weight_decay": tune.choice([0.0, 0.1, 0.2, 0.3]),
         # "num_train_epochs": tune.choice([20]),
-        "per_device_train_batch_size": tune.choice([6, 8, 10, 12, 14]),
+        "per_device_train_batch_size": tune.choice([6, 8, 10, 12]),
     }
 
     trainer.hyperparameter_search(
