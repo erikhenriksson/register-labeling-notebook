@@ -1,3 +1,4 @@
+import sys
 import numpy as np
 import torch
 import datasets
@@ -18,7 +19,7 @@ from transformers import (
 )
 from ray import tune
 
-evaluation_name = "xmlr-base-fr-tune"
+evaluation_name = sys.argv[1]
 
 data_path = "data/"
 output_path = "/scratch/project_2005092/erik/register-labeling-notebook/"
