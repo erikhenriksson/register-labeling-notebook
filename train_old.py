@@ -3,6 +3,7 @@ import datasets
 import torch
 import logging
 import sys
+import os
 import numpy as np
 import wandb
 
@@ -546,6 +547,14 @@ def get_trainer():
 
 if options.tune:
     wandb.login()
+    # set the wandb project where this run will be logged
+    os.environ["WANDB_PROJECT"] = "register-labeling"
+
+    # save your trained model checkpoint to wandb
+    os.environ["WANDB_LOG_MODEL"] = "true"
+
+    # turn off watch to log faster
+    os.environ["WANDB_WATCH"] = "false"
 
     params = {
         "method": "bayes",
