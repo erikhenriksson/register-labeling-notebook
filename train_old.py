@@ -582,14 +582,13 @@ if options.tune:
         "per_device_eval_batch_size": 32,
     }
 
-
     scheduler = PopulationBasedTraining(
         time_attr="training_iteration",
         metric="eval_acc",
         mode="max",
         perturbation_interval=1,
         hyperparam_mutations={
-            "learning_rate": tune.uniform(0.0001, lower=1e-07),
+            "learning_rate": tune.uniform(upper=0.0001, lower=1e-07),
             "per_device_train_batch_size": [16, 32, 64],
         },
     )
@@ -600,14 +599,14 @@ if options.tune:
         hp_space=lambda _: tune_config,
         backend="ray",
         scheduler=scheduler,
-        #checkpoint_config=CheckpointConfig(
+        # checkpoint_config=CheckpointConfig(
         #    num_to_keep=1,
         #    checkpoint_score_attribute="training_iteration",
-        #),
-        #progress_reporter=reporter,
-        #local_dir="~/ray_results/",
-        #name="tune_transformer_pbt",
-        #log_to_file=True,
+        # ),
+        # progress_reporter=reporter,
+        # local_dir="~/ray_results/",
+        # name="tune_transformer_pbt",
+        # log_to_file=True,
     )
 
     """
