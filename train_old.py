@@ -604,7 +604,7 @@ if options.tune:
         metric_columns=[
             "eval_f1",
             "eval_f1_th05",
-            "eval_acc",
+            "eval_accuracy",
             "eval_loss",
             "epoch",
             "training_iteration",
