@@ -430,7 +430,7 @@ print("Batch size: ", options.batch_size)
 print("Epochs: ", options.epochs)
 
 trainer_args = transformers.TrainingArguments(
-    cache_dir=f"{working_dir}/checkpoints",
+    f"{working_dir}/checkpoints",
     evaluation_strategy="epoch",
     save_strategy="epoch",
     logging_strategy="epoch",
