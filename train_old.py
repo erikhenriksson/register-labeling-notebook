@@ -6,7 +6,7 @@ import sys
 import os
 import numpy as np
 import wandb
-from ray import tune
+
 
 logging.disable(logging.INFO)
 from sklearn.metrics import (
@@ -544,12 +544,15 @@ def get_trainer():
 
 
 if options.tune:
+    from ray import tune
+    from ray.tune.search.hyperopt import HyperOptSearch
+
     asha_scheduler = tune.schedulers.ASHAScheduler(
         metric="eval_f1",
         mode="max",
     )
 
-    hyperopt_search = tune.search.hyperopt.HyperOptSearch(metric="eval_f1", mode="max")
+    hyperopt_search = HyperOptSearch(metric="eval_f1", mode="max")
 
     tune_config = {
         "learning_rate": tune.grid_search(
