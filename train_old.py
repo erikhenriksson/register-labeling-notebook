@@ -589,7 +589,7 @@ if options.tune:
         perturbation_interval=1,
         hyperparam_mutations={
             "learning_rate": tune.uniform(upper=0.0001, lower=1e-07),
-            "per_device_train_batch_size": [16, 32, 64],
+            "per_device_train_batch_size": [6, 8, 12, 16],
         },
     )
 
