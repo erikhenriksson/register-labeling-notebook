@@ -6,6 +6,7 @@ import sys
 import os
 import numpy as np
 import wandb
+from ray import tune
 
 logging.disable(logging.INFO)
 from sklearn.metrics import (
@@ -78,7 +79,6 @@ def argparser():
         help="Number of training epochs",
     )
     ap.add_argument(
-        "--lr",
         "--learning_rate",
         metavar="FLOAT",
         type=float,
@@ -112,6 +112,7 @@ def argparser():
 
 
 options = argparser().parse_args(sys.argv[1:])
+
 if options.labels == "full":
     labels = labels_full
 else:
@@ -120,7 +121,7 @@ else:
 working_dir = f"{options.working_dir}/{options.train}_{options.test}"
 
 num_labels = len(labels)
-print("Number of labels:", num_labels)
+print(f"Number of labels: {num_labels}")
 
 # register scheme mapping:
 sub_register_map = {
@@ -191,9 +192,6 @@ sub_register_map = {
     "TA": "SP",
     "OTHER": "OS",
     "": "",
-    #    'av': 'OP', # uncomment if you want to combine these into upper registers
-    #    'ed': 'IP',
-    #    'fi': 'IN'
 }
 
 
@@ -546,6 +544,33 @@ def get_trainer():
 
 
 if options.tune:
+    asha_scheduler = tune.schedulers.ASHAScheduler(
+        metric="eval_f1",
+        mode="max",
+    )
+
+    hyperopt_search = tune.suggest.hyperopt.HyperOptSearch(metric="eval_f1", mode="max")
+
+    tune_config = {
+        "learning_rate": tune.grid_search(
+            [0.00008, 0.00006, 0.00004, 0.00002, 0.000008]
+        ),
+        # "weight_decay": tune.choice([0.0, 0.1, 0.2, 0.3]),
+        # "num_train_epochs": tune.choice([20]),
+        "per_device_train_batch_size": tune.choice([6, 8, 10, 12]),
+    }
+
+    trainer = get_trainer()
+
+    trainer.hyperparameter_search(
+        hp_space=lambda _: tune_config,
+        backend="ray",
+        scheduler=asha_scheduler,
+        search_alg=hyperopt_search
+        direction="maximize",
+    )
+
+    """
     wandb.login()
     # set the wandb project where this run will be logged
     os.environ["WANDB_PROJECT"] = "register-labeling"
@@ -580,6 +605,7 @@ if options.tune:
     wandb.agent(sweep_id, train, count=20)
 
     exit()
+    """
 
 
 print("Training...")
