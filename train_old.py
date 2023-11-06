@@ -549,7 +549,7 @@ if options.tune:
         mode="max",
     )
 
-    hyperopt_search = tune.suggest.hyperopt.HyperOptSearch(metric="eval_f1", mode="max")
+    hyperopt_search = tune.search.hyperopt.HyperOptSearch(metric="eval_f1", mode="max")
 
     tune_config = {
         "learning_rate": tune.grid_search(
