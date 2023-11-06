@@ -1,5 +1,4 @@
 import transformers
-from transformers import AutoConfig
 import datasets
 import torch
 import logging
@@ -9,28 +8,22 @@ import numpy as np
 logging.disable(logging.INFO)
 from sklearn.metrics import (
     classification_report,
-    confusion_matrix,
     accuracy_score,
     f1_score,
-    precision_recall_fscore_support,
     roc_auc_score,
 )
 from sklearn.preprocessing import MultiLabelBinarizer
-from transformers import EarlyStoppingCallback
 from pprint import PrettyPrinter
 from collections import defaultdict
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 pprint = PrettyPrinter(compact=True).pprint
-# default arguments
-LEARNING_RATE = 3.2708e-05
-BATCH_SIZE = 8
-TRAIN_EPOCHS = 30
+
+LEARNING_RATE = 0.000022
+BATCH_SIZE = 6
+TRAIN_EPOCHS = 15
 MODEL_NAME = "xlm-roberta-base"
 PATIENCE = 5
-
-# omit av, ed, fi
-# labels_full = ['HI', 'ID', 'IN', 'IP', 'LY', 'NA', 'OP', 'SP', 'ds', 'dtp', 'en', 'it', 'lt', 'nb', 'ne', 'ob', 'ra', 're', 'rs', 'rv', 'sr']
 
 labels_full = [
     "HI",
@@ -97,15 +90,7 @@ def argparser():
         default=PATIENCE,
         help="Early stopping patience",
     )
-    ap.add_argument(
-        "--checkpoints",
-        default="checkpoints",
-        metavar="FILE",
-        help="Save model checkpoints to directory",
-    )
-    ap.add_argument(
-        "--save_model", default=None, metavar="FILE", help="Save model to file"
-    )
+    ap.add_argument("--save_model", default=True, type=bool, help="Save model to file")
     ap.add_argument(
         "--threshold",
         default=None,
@@ -120,6 +105,8 @@ def argparser():
     ap.add_argument("--class_weights", default=False, type=bool)
     # ap.add_argument('--save_predictions', default=False, action='store_true',
     #                help='save predictions and labels for dev set, or for test set if provided')
+
+    ap.add_argument("--working_dir", default="output", help="Working directory")
     return ap
 
 
@@ -128,6 +115,9 @@ if options.labels == "full":
     labels = labels_full
 else:
     labels = labels_upper
+
+working_dir = f"{options.working_dir}/{options.train}_{options.test}"
+
 num_labels = len(labels)
 print("Number of labels:", num_labels)
 
@@ -250,6 +240,14 @@ small_languages = [
     "zh",
 ]
 
+# data column structures
+cols = {
+    "fr": ["a", "b", "label", "text", "c"],
+    "fi": ["label", "text", "a", "b", "c"],
+    "sv": ["a", "b", "label", "text", "c"],
+}
+
+
 # choose data with all languages with option 'multi'
 for l in options.train.split("-"):
     print("L train", l)
@@ -271,7 +269,7 @@ dataset = datasets.load_dataset(
     "csv",
     data_files=data_files,  # {'train':options.train, 'test':options.test, 'dev': options.dev},
     delimiter="\t",
-    column_names=["a", "b", "label", "text", "c"],
+    column_names=cols[options.train],
     features=datasets.Features(
         {  # Here we tell how to interpret the attributes
             "text": datasets.Value("string"),
@@ -279,7 +277,7 @@ dataset = datasets.load_dataset(
             "label": datasets.Value("string"),
         }
     ),
-    cache_dir="/scratch/project_2005092/erik/register-labeling-notebook/old/cachedir",
+    cache_dir=f"{working_dir}/dataset_cache",
 )
 dataset = dataset.shuffle(seed=42)
 
@@ -405,7 +403,7 @@ print("dataset tokenized")
 model = transformers.AutoModelForSequenceClassification.from_pretrained(
     model_name,
     num_labels=num_labels,
-    cache_dir="/scratch/project_2005092/erik/register-labeling-notebook/old/cachedir",
+    cache_dir=f"{working_dir}/model_cache",
 )  # , config=config)#config.output_hidden_states=True)
 # assert model.config.output_hidden_states == True
 
@@ -432,7 +430,7 @@ print("Batch size: ", options.batch_size)
 print("Epochs: ", options.epochs)
 
 trainer_args = transformers.TrainingArguments(
-    options.checkpoints,
+    cache_dir=f"{working_dir}/checkpoints",
     evaluation_strategy="epoch",
     save_strategy="epoch",
     logging_strategy="epoch",
@@ -449,7 +447,7 @@ trainer_args = transformers.TrainingArguments(
 data_collator = transformers.DataCollatorWithPadding(tokenizer)
 
 # Argument gives the number of steps of patience before early stopping
-early_stopping = EarlyStoppingCallback(early_stopping_patience=5)
+early_stopping = transformers.EarlyStoppingCallback(early_stopping_patience=5)
 
 threshold = options.threshold
 
@@ -568,5 +566,8 @@ preds[np.where(probs >= threshold)] = 1
 
 print(classification_report(trues, preds, target_names=labels))
 
-if options.save_model is not None:
-    torch.save(trainer.model, options.save_model)
+if options.save_model:
+    torch.save(
+        trainer.model,
+        f"{working_dir}/saved_model",
+    )

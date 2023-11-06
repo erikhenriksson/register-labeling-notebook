@@ -461,8 +461,8 @@ trainer = MultiLabelTrainer(
 
 if evaluation["tune_hyperparameters"]:
     asha_scheduler = tune.schedulers.ASHAScheduler(
-        metric="eval_f1",
-        mode="max",
+        metric="loss",
+        mode="min",
     )
 
     tune_config = {
