@@ -599,6 +599,7 @@ if options.tune:
         hp_space=lambda _: tune_config,
         backend="ray",
         scheduler=scheduler,
+        keep_checkpoints_num=1
         # checkpoint_config=CheckpointConfig(
         #    num_to_keep=1,
         #    checkpoint_score_attribute="training_iteration",
