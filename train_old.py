@@ -555,9 +555,10 @@ if options.tune:
     hyperopt_search = HyperOptSearch(metric="eval_f1", mode="max")
 
     tune_config = {
-        "learning_rate": tune.grid_search(
-            [0.00008, 0.00006, 0.00004, 0.00002, 0.000008]
-        ),
+        # "learning_rate": tune.grid_search(
+        #    [0.00008, 0.00006, 0.00004, 0.00002, 0.000008]
+        # ),
+        "learning_rate": tune.loguniform(upper=0.0001, lower=1e-07),
         # "weight_decay": tune.choice([0.0, 0.1, 0.2, 0.3]),
         # "num_train_epochs": tune.choice([20]),
         "per_device_train_batch_size": tune.choice([6, 8, 10, 12]),
