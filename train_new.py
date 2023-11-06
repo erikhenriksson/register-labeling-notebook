@@ -75,7 +75,7 @@ evaluations = {
         "threshold": None,
         "cache_dir": f"{output_path}fi/cache",
         "checkpoint_dir": f"{output_path}fi/checkpoints",
-        "tune_hyperparameters": True,
+        "tune_hyperparameters": False,
     },
     "xmlr-base-fi-tune": {
         "model_name": "xlm-roberta-base",
