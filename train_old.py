@@ -547,6 +547,8 @@ if options.tune:
     from ray import tune
     from ray.tune.schedulers import PopulationBasedTraining
     from ray.tune.search.hyperopt import HyperOptSearch
+    from ray.train import CheckpointConfig
+    from ray.tune import CLIReporter
 
     """
     asha_scheduler = tune.schedulers.ASHAScheduler(
@@ -593,13 +595,28 @@ if options.tune:
         },
     )
 
+    reporter = CLIReporter(
+        parameter_columns={
+            "learning_rate": "lr",
+            "per_device_train_batch_size": "bs",
+            "num_train_epochs": "num_epochs",
+        },
+        metric_columns=["eval_f1", "eval_f1_th05", "eval_acc", "eval_loss", "epoch", "training_iteration"],
+    )
+
     trainer = get_trainer()
 
     trainer.hyperparameter_search(
         hp_space=lambda _: tune_config,
         backend="ray",
         scheduler=scheduler,
-        keep_checkpoints_num=1
+        checkpoint_config=CheckpointConfig(
+            num_to_keep=1,
+            checkpoint_score_attribute="training_iteration",
+        ),
+        local_dir=f"{working_dir}/ray",
+        name="tune_transformer_pbt",
+        log_to_file=True
         # checkpoint_config=CheckpointConfig(
         #    num_to_keep=1,
         #    checkpoint_score_attribute="training_iteration",
