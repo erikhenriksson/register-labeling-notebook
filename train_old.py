@@ -4,6 +4,7 @@ import torch
 import logging
 import sys
 import numpy as np
+import wandb
 
 logging.disable(logging.INFO)
 from sklearn.metrics import (
@@ -24,6 +25,7 @@ BATCH_SIZE = 6
 TRAIN_EPOCHS = 15
 MODEL_NAME = "xlm-roberta-base"
 PATIENCE = 5
+WORKING_DIR = "/scratch/project_2005092/erik/rl_old"
 
 labels_full = [
     "HI",
@@ -59,7 +61,6 @@ def argparser():
     ap = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
     ap.add_argument("--model_name", default=MODEL_NAME, help="Pretrained model name")
     ap.add_argument("--train", required=True, help="Path to training data")
-    ap.add_argument("--dev", required=True, help="Path to validation data")
     ap.add_argument("--test", required=True, help="Path to test data")
     ap.add_argument(
         "--batch_size",
@@ -103,10 +104,9 @@ def argparser():
         "--load_model", default=None, metavar="FILE", help="load existing model"
     )
     ap.add_argument("--class_weights", default=False, type=bool)
-    # ap.add_argument('--save_predictions', default=False, action='store_true',
-    #                help='save predictions and labels for dev set, or for test set if provided')
+    ap.add_argument("--working_dir", default=WORKING_DIR, help="Working directory")
+    ap.add_argument("--tune", default=False, type=bool, help="Tune hyperparameters")
 
-    ap.add_argument("--working_dir", default="output", help="Working directory")
     return ap
 
 
@@ -400,12 +400,14 @@ print("dataset tokenized")
 # config.output_hidden_states = True
 # model = model.from_pretrained(name, config=config)
 
-model = transformers.AutoModelForSequenceClassification.from_pretrained(
-    model_name,
-    num_labels=num_labels,
-    cache_dir=f"{working_dir}/model_cache",
-)  # , config=config)#config.output_hidden_states=True)
-# assert model.config.output_hidden_states == True
+
+def model_init():
+    return transformers.AutoModelForSequenceClassification.from_pretrained(
+        model_name,
+        num_labels=num_labels,
+        cache_dir=f"{working_dir}/model_cache",
+    )  # , config=config)#config.output_hidden_states=True)
+    # assert model.config.output_hidden_states == True
 
 
 class MultilabelTrainer(transformers.Trainer):
@@ -438,10 +440,12 @@ trainer_args = transformers.TrainingArguments(
     eval_steps=100,
     logging_steps=100,
     learning_rate=options.lr,  # 0.000005,#0.000005
+    metric_for_best_model="eval_f1",
+    greater_is_better=True,
     per_device_train_batch_size=options.batch_size,
     per_device_eval_batch_size=32,
     num_train_epochs=options.epochs,
-    #    max_steps=1000,
+    report_to="wandb" if options.tune else None,
 )
 
 data_collator = transformers.DataCollatorWithPadding(tokenizer)
@@ -525,18 +529,52 @@ class LogSavingCallback(transformers.TrainerCallback):
 training_logs = LogSavingCallback()
 threshold = options.threshold
 
-trainer = None
-trainer = MultilabelTrainer(
-    model=model,
-    args=trainer_args,
-    train_dataset=dataset["train"],
-    eval_dataset=dataset["dev"],
-    compute_metrics=compute_metrics,
-    data_collator=data_collator,
-    tokenizer=tokenizer,
-    callbacks=[early_stopping, training_logs],
-)
+
+def get_trainer():
+    return MultilabelTrainer(
+        model=None,
+        model_init=model_init,
+        args=trainer_args,
+        train_dataset=dataset["train"],
+        eval_dataset=dataset["dev"],
+        compute_metrics=compute_metrics,
+        data_collator=data_collator,
+        tokenizer=tokenizer,
+        callbacks=[early_stopping, training_logs],
+    )
+
+
+if options.tune:
+    wandb.login()
+
+    params = {
+        "method": "bayes",
+        "metric": {"name": "eval_f1", "goal": "maximize"},
+        "parameters": {
+            "learning_rate": {
+                "distribution": "log_uniform_values",
+                "min": 1e-7,
+                "max": 1e-4,
+            },
+            "per_device_train_batch_size": {"values": [6, 8, 12, 16]},
+        },
+    }
+
+    def train(config=None):
+        with wandb.init(config=config):
+            config = wandb.config
+            trainer = get_trainer()
+            trainer.train()
+
+    sweep_id = wandb.sweep(params, project="register-labeling")
+
+    wandb.agent(sweep_id, train, count=20)
+
+    exit()
+
+
 print("Training...")
+trainer = get_trainer()
 trainer.train()
 
 print("Evaluating with test set...")

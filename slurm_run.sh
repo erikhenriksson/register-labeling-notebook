@@ -4,7 +4,7 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=32G
 #SBATCH -p gpu
-#SBATCH -t 08:10:00
+#SBATCH -t 12:00:00
 #SBATCH --gres=gpu:v100:1
 #SBATCH --ntasks-per-node=1
 #SBATCH --account=Project_2005092
@@ -12,6 +12,9 @@
 #SBATCH -e logs/%j.err
 
 echo "START: $(date)"
+
+module purge
+module load pytorch
 
 rm logs/current.err
 rm logs/current.out
