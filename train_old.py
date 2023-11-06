@@ -426,7 +426,7 @@ class MultilabelTrainer(transformers.Trainer):
 
 
 print("Model type: ", options.model_name)
-print("Learning rate: ", options.lr)
+print("Learning rate: ", options.learning_rate)
 print("Batch size: ", options.batch_size)
 print("Epochs: ", options.epochs)
 
@@ -438,7 +438,7 @@ trainer_args = transformers.TrainingArguments(
     load_best_model_at_end=True,
     eval_steps=100,
     logging_steps=100,
-    learning_rate=options.lr,  # 0.000005,#0.000005
+    learning_rate=options.learning_rate,
     metric_for_best_model="eval_f1",
     greater_is_better=True,
     per_device_train_batch_size=options.batch_size,
