@@ -566,7 +566,7 @@ if options.tune:
         hp_space=lambda _: tune_config,
         backend="ray",
         scheduler=asha_scheduler,
-        search_alg=hyperopt_search
+        search_alg=hyperopt_search,
         direction="maximize",
     )
 
