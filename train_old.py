@@ -27,7 +27,7 @@ BATCH_SIZE = 6
 TRAIN_EPOCHS = 15
 MODEL_NAME = "xlm-roberta-base"
 PATIENCE = 5
-WORKING_DIR = "/scratch/project_2005092/erik/rl_old"
+WORKING_DIR = "/scratch/project_2005092/register-labeling"
 
 labels_full = [
     "HI",
